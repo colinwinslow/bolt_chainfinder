@@ -11,7 +11,7 @@ global distance_limit
 # sets the allowed range for variance in spacing from one pair of objects in the line to the next.
 # a value of 1 allows objects to range from half as distant to twice as distant, and a value of 2
 # allows them to range from 1/4 as distant to 4 times as distant, etc.
-distance_limit = 1
+distance_limit = 3
 
 
 global angle_limit 
@@ -25,11 +25,14 @@ min_line_length=3
 global anglevar_weight,distvar_weight,dist_weight
 #adjusts the weight of angle and distance variation in the cost function.
 
-anglevar_weight = 0     # these two are redundant and i'm pretty sure I'm
-distvar_weight = 0      # going to get rid of them, as adjusting the limits 
-                        # controls their roles in the cost function more elegantly
+anglevar_weight = .05     # these two need to be small compared to dist_weight
+distvar_weight = .1      
+                       
 
 dist_weight=1
+
+
+
 
 def main():
     
@@ -74,7 +77,6 @@ def findChains(inputObjectSet):
     for pair in startingPairs:
         result = chainSearch(pair[0], pair[1], inputObjectSet)
         if result != None: bestlines.append(result)
-    print "bestlines: ",bestlines
     print "best lines:"
     verybest = []
     for line in bestlines:
@@ -119,6 +121,7 @@ def chainSearch(start, finish, points):
         
         
 #cost functions
+
 def oldAngleCost(a, b, c):
     '''angle cost of going to c given we came from ab'''
     abDir = b - a
@@ -126,6 +129,7 @@ def oldAngleCost(a, b, c):
     difference = util.findAngle(abDir, bcDir)
     if np.isnan(difference): return 0
     else: return np.abs(difference)
+    
 def angleCost(a, b, c, d):
     '''prefers straighter lines'''
     abDir = b - a
@@ -133,15 +137,17 @@ def angleCost(a, b, c, d):
     difference = util.findAngle(abDir, cdDir)
     if np.isnan(difference): return 0
     else: return np.abs(difference)
+    
 def distVarCost(a, b, c):
     #np.seterr(all='warn')
     '''prefers lines with less variance in their spacing'''
     abDist = util.findDistance(a, b)
     bcDist = util.findDistance(b, c)
     if bcDist==0:
-        return 200
-    almostdone= np.abs(np.log2((1/abDist)*bcDist))
-    return almostdone
+        #shouldn't ever occur, but prevents undefined data while debugging
+        return 0
+    return np.abs(np.log2((1/abDist)*bcDist))
+
 def distCost(current,step,start,goal):
     '''prefers dense lines to sparse ones'''
     stepdist = util.findDistance(current, step)
@@ -166,31 +172,22 @@ class Node:
     
     def getSuccessors(self, points,start,finish):
         
-        
-        if self.parent == -1:
-            out = []
+        out = []
+        if self.parent == -1: 
             for p in points:
                 if self.state.id != p.id and finish.id!=p.id: 
-                    
                     aCost = angleCost(self.state.position,finish.position, self.state.position, p.position)
-                    if aCost <= angle_limit:
-                        dCost =distCost(self.state.position,p.position,start.position,finish.position)
-                        if dCost < 1: # prevents it from choosing points that overshoot the target.
-                            normA = anglevar_weight*(aCost/angle_limit)
-                            normD = dist_weight*dCost
-                            finalcost = (normA+normD)/(anglevar_weight+dist_weight)
-                            out.append(Node(p,self,p.id, finalcost))
-            return out
+                    dCost =distCost(self.state.position,p.position,start.position,finish.position)
+                    if aCost <= angle_limit and dCost < 1: # prevents it from choosing points that overshoot the target.
+                        normA = anglevar_weight*(aCost/angle_limit)
+                        normD = dist_weight*dCost
+                        finalcost = (normA+normD)/(anglevar_weight+dist_weight)
+                        out.append(Node(p,self,p.id, finalcost))
         else:
-#            print "parent is not -1"
             out = []
-            
             for p in points:
                 if self.state.id != p.id: 
-                    vCost = distVarCost(self.parent.state.position, self.state.position, p.position)
-                    
-                  
-                                       
+                    vCost = distVarCost(self.parent.state.position, self.state.position, p.position)       
                     aCost = angleCost(self.parent.state.position, self.state.position,self.state.position, p.position)
 #                    aCost = oldAngleCost(self.parent.state.position,self.state.position,p.position)
                     dCost = distCost(self.state.position,p.position,start.position,finish.position)
@@ -200,17 +197,18 @@ class Node:
                         finalCost = (normA+normV+dCost)/(distvar_weight+anglevar_weight+dist_weight)
                         out.append(Node(p,self,p.id,finalCost))
                         
-            return out
+        return out
 
     def traceback(self):
 #         cost = 0
         solution = []
         node = self
         while node.parent != -1:
-            solution.insert(0, node.action)
+            solution.append(node.action)
             node = node.parent
         cardinality = len(solution)-1 #exclude the first node, which has cost 0
         cost = self.cost/cardinality
+        solution.reverse()
         solution.append(cost)
         return solution
 
