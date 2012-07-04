@@ -189,10 +189,7 @@ class Node:
                 if self.state.id != p.id: 
                     vCost = distVarCost(self.parent.state.position, self.state.position, p.position)
                     
-                    #angle‚ost prefers chains to adhere to the most direct path from start to finish, wherease
-                    #oldAngleCost only cares that each link in the chain is roughly in-line with the previous two objects
-                    # essentially anglecost finds lines, and oldAngleCost finds chains.
-                    # angleCost should always be used for the first link, though.
+                  
                                        
                     aCost = angleCost(self.parent.state.position, self.state.position,self.state.position, p.position)
 #                    aCost = oldAngleCost(self.parent.state.position,self.state.position,p.position)
