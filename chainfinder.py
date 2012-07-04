@@ -11,12 +11,12 @@ global distance_limit
 # sets the allowed range for variance in spacing from one pair of objects in the line to the next.
 # a value of 1 allows objects to range from half as distant to twice as distant, and a value of 2
 # allows them to range from 1/4 as distant to 4 times as distant, etc.
-distance_limit = 105
+distance_limit = 1
 
 
 global angle_limit 
 #the max angle, in radians, that an object is allowed to deviate from the existing line.
-angle_limit = .7
+angle_limit = .9
 
 global min_line_length
 #minimum number of objects considered to be a line
@@ -24,8 +24,11 @@ min_line_length=3
 
 global anglevar_weight,distvar_weight,dist_weight
 #adjusts the weight of angle and distance variation in the cost function.
-anglevar_weight = 0
-distvar_weight = 0
+
+anglevar_weight = 0     # these two are redundant and i'm pretty sure I'm
+distvar_weight = 0      # going to get rid of them, as adjusting the limits 
+                        # controls their roles in the cost function more elegantly
+
 dist_weight=1
 
 def main():
@@ -69,7 +72,7 @@ def findChains(inputObjectSet):
     
     bestlines = []
     for pair in startingPairs:
-        result = chainSearch(pair[0], pair[1], inputObjectSet, trace)
+        result = chainSearch(pair[0], pair[1], inputObjectSet)
         if result != None: bestlines.append(result)
     print "bestlines: ",bestlines
     print "best lines:"
@@ -85,7 +88,7 @@ def findChains(inputObjectSet):
 
         
             
-def chainSearch(start, finish, points, trace=False):
+def chainSearch(start, finish, points):
     node = Node(start, -1, [], 0)
     frontier = PriorityQueue()
     frontier.push(node, 0)
@@ -185,8 +188,14 @@ class Node:
             for p in points:
                 if self.state.id != p.id: 
                     vCost = distVarCost(self.parent.state.position, self.state.position, p.position)
-                    #aCost = angleCost(self.parent.state.position, self.state.position,self.state.position, p.position)
-                    aCost = oldAngleCost(self.parent.state.position,self.state.position,p.position)
+                    
+                    #angle‚ost prefers chains to adhere to the most direct path from start to finish, wherease
+                    #oldAngleCost only cares that each link in the chain is roughly in-line with the previous two objects
+                    # essentially anglecost finds lines, and oldAngleCost finds chains.
+                    # angleCost should always be used for the first link, though.
+                                       
+                    aCost = angleCost(self.parent.state.position, self.state.position,self.state.position, p.position)
+#                    aCost = oldAngleCost(self.parent.state.position,self.state.position,p.position)
                     dCost = distCost(self.state.position,p.position,start.position,finish.position)
                     if aCost <= angle_limit and dCost <= 1:
                         normV = distvar_weight*(vCost/distance_limit)
