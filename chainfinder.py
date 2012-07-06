@@ -6,7 +6,11 @@ quick description and documentation in attached readme file.
 import util
 import numpy as np
 import heapq
-from collections import namedtuple
+
+global ignore_z
+#ignores z axis data
+ignore_z = False
+
 global distance_limit 
 # sets the allowed range for variance in spacing from one pair of objects in the line to the next.
 # a value of 1 allows objects to range from half as distant to twice as distant, and a value of 2
@@ -28,7 +32,6 @@ global anglevar_weight,distvar_weight,dist_weight
 anglevar_weight = .05     # these two need to be small compared to dist_weight
 distvar_weight = .1      
                        
-
 dist_weight=1
 
 
@@ -40,7 +43,7 @@ def main():
     np.seterr(all='raise')
     
     print "scene 14, step 8"
-    scene14_8 = findChains(util.get_objects(14, 8))
+    scene14_8 = findChains(util.get_objects(14, 8,ignore_z=False))
 #    print""
 #    print "scene 4, step 5"
 #    findChains(util.get_objects(4, 5))

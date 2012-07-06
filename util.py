@@ -5,11 +5,11 @@ import numpy as np
 import math
 
 
-def get_objects(sequence_index, frameIndex):
+def get_objects(sequence_index, frameIndex,ignore_z = False):
     '''returns list of objects in given sequence at any particular frame'''
     s = Sequence.query.filter_by(seq_idx=sequence_index)
     f = s.filter_by(scene_idx=frameIndex).first().scene_id
-    return map(extract_data, Object.query.filter_by(scene_id=f).all())
+    return map(lambda d: extract_data(d,ignore_z), Object.query.filter_by(scene_id=f).all())
 
 def get_objects_by_scene(sceneIndex):
     '''returns list of objects in given scene id'''
@@ -22,10 +22,16 @@ def totuple(a):
     except TypeError:
         return a
     
-def extract_data(o, n=3):
+def extract_data(o, ignore_z):
     '''extract position and size information for a given object in the db'''
     PhysicalObject = namedtuple('physicalObject', ['id', 'position', 'bbmin', 'bbmax'])
-    return PhysicalObject(o.id,
+    if ignore_z:
+        return PhysicalObject(o.id,
+             np.array([o.position_x, o.position_y]),
+             np.array([o.bb_min_x, o.bb_min_y]),
+             np.array([o.bb_max_x, o.bb_max_y])
+                )
+    else: return PhysicalObject(o.id,
              np.array([o.position_x, o.position_y, o.position_z]),
              np.array([o.bb_min_x, o.bb_min_y, o.bb_min_z]),
              np.array([o.bb_max_x, o.bb_max_y, o.bb_max_z])
