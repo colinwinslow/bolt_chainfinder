@@ -47,19 +47,12 @@ def main():
     print "scene 14, step 8"
     
 
-    objects = util.get_objects(14, 8,ignore_z=False)
-    moreobjects = util.get_objects(4, 5)
-    more1 = util.get_objects(12,5)
-    more2 = util.get_objects(13,3)
-    more3 = util.get_objects(10,5)
-    #objects = objects + moreobjects + more1 + more2 + more3
-    scene14_8 = findChains(objects)
-#    print""
-#    print "scene 4, step 5"
-#    findChains(util.get_objects(4, 5))
 
-    for line in scene14_8:
-        print  "cost: ", line[0],"\t",util.lookup_objects(line[1])
+    for line in findChains(util.get_objects(14, 8)):
+        print  "prior: ", np.round(line[0],4),"\t",util.lookup_objects(line[1])
+
+
+
 
 def findChains(inputObjectSet):
     '''finds all the chains, then returns the ones that satisfy constraints, sorted from best to worst.'''

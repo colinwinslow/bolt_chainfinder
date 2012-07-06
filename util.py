@@ -11,9 +11,6 @@ def get_objects(sequence_index, frameIndex,ignore_z = False):
     f = s.filter_by(scene_idx=frameIndex).first().scene_id
     return map(lambda d: extract_data(d,ignore_z), Object.query.filter_by(scene_id=f).all())
 
-def getall():
-    map(lambda d: extract_data(d,False), Object.query.all())
-
 def get_objects_by_scene(sceneIndex):
     '''returns list of objects in given scene id'''
     return map(extract_data, Object.query.filter_by(scene_id=sceneIndex).all())
