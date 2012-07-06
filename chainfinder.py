@@ -40,55 +40,33 @@ def main():
     np.seterr(all='raise')
     
     print "scene 14, step 8"
-    findChains(util.get_objects(14, 8))
-    print""
-    print "scene 4, step 5"
-    findChains(util.get_objects(4, 5))
-    
-    PhysicalObject = namedtuple('physicalObject', ['id', 'position', 'bbmin', 'bbmax'])
-#    
-#    a = PhysicalObject(1,np.array([1,0]),1,1)
-#    b = PhysicalObject(2,np.array([2,0]),1,1)
-#    c = PhysicalObject(3,np.array([3,0]),1,1)
-#    d = PhysicalObject(4,np.array([4,0]),1,1)
-#    e = PhysicalObject(5,np.array([5,0]),1,1)
-#    
-#    f = PhysicalObject(6,np.array([1,1]),1,1)
-#    g = PhysicalObject(7,np.array([2,2]),1,1)
-#    h = PhysicalObject(8,np.array([3,3]),1,1)
-#    i = PhysicalObject(9,np.array([4,4]),1,1)
-#    j = PhysicalObject(10,np.array([5,5]),1,1)
-#    k = PhysicalObject(11,np.array([6,6]),1,1)
-#
-#    
-#    print"test problem"
-#    findChains([a,b,c,d,e,f,g,h,i,j,k])
-    
-    
-    
-    
-    
+    scene14_8 = findChains(util.get_objects(14, 8))
+#    print""
+#    print "scene 4, step 5"
+#    findChains(util.get_objects(4, 5))
+
+    for line in scene14_8:
+        print  "cost: ", line[0],"\t",util.lookup_objects(line[1])
 
 def findChains(inputObjectSet):
     '''finds all the chains, then returns the ones that satisfy constraints, sorted from best to worst.'''
-    startingPairs = util.find_pairs(inputObjectSet)
+
     
     bestlines = []
-    for pair in startingPairs:
+    for pair in util.find_pairs(inputObjectSet):
         result = chainSearch(pair[0], pair[1], inputObjectSet)
         if result != None: bestlines.append(result)
-    print "best lines:"
+
     verybest = []
+    costSum = 0
     for line in bestlines:
         if len(line)>min_line_length:
             verybest.append(line)
-    verybest.sort(key=lambda l: l[len(l)-1])
-    
-    for line in verybest:
-        print  "cost: ", line[len(line)-1],"\t",util.lookup_objects(line)
-    return verybest
-
-        
+            line[len(line)-1] = 1-line[len(line)-1]
+            costSum += line[len(line)-1]
+    verybest.sort(key=lambda l: l[len(l)-1],reverse=True)
+    costs = map(lambda l: l.pop()/costSum,verybest)
+    return zip(costs,verybest)
             
 def chainSearch(start, finish, points):
     node = Node(start, -1, [], 0)
@@ -107,18 +85,7 @@ def chainSearch(start, finish, points):
             if child.state.id not in explored and frontier.contains(child.state.id)==False:
                 frontier.push(child, child.cost)
             elif frontier.contains(child.state.id) and frontier.pathCost(child.state.id) > child.cost:
-                frontier.push(child,child.cost)
-
-                
-            
-        
-
-
-    
-
-
-            
-        
+                frontier.push(child,child.cost)     
         
 #cost functions
 
@@ -200,7 +167,6 @@ class Node:
         return out
 
     def traceback(self):
-#         cost = 0
         solution = []
         node = self
         while node.parent != -1:
