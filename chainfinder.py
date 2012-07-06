@@ -39,25 +39,14 @@ dist_weight=1
 
 
 def main():
-    
-    
     print "Sample run of line detecton on Blockworld: \n"
     np.seterr(all='raise')
-    
     print "scene 14, step 8"
-    
-
-
     for line in findChains(util.get_objects(14, 8)):
         print  "prior: ", np.round(line[0],4),"\t",util.lookup_objects(line[1])
 
-
-
-
 def findChains(inputObjectSet):
     '''finds all the chains, then returns the ones that satisfy constraints, sorted from best to worst.'''
-
-    
     bestlines = []
     explored = set()
     skipped = 0
@@ -138,10 +127,6 @@ def distCost(current,step,start,goal):
     totaldist= util.findDistance(start, goal)
     return stepdist**2/totaldist**2
     
-    
-
-
-    
 class Node:
     def __init__(self, state, parent, action, cost):
         self.state = state
@@ -214,17 +199,12 @@ class PriorityQueue:
     def pathCost(self,item):
         return self.dict.get(item)
 
-
     def pop(self):
         (priority, item) = heapq.heappop(self.heap)
         return item
         
-  
-
     def isEmpty(self):
         return len(self.heap) == 0
-
-
 
 
 if __name__ == '__main__': main()
