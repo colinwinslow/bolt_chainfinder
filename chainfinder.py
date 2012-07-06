@@ -7,6 +7,7 @@ import util
 import numpy as np
 import heapq
 
+
 global ignore_z
 #ignores z axis data
 ignore_z = False
@@ -39,11 +40,20 @@ dist_weight=1
 
 def main():
     
+    
     print "Sample run of line detecton on Blockworld: \n"
     np.seterr(all='raise')
     
     print "scene 14, step 8"
-    scene14_8 = findChains(util.get_objects(14, 8,ignore_z=False))
+    
+
+    objects = util.get_objects(14, 8,ignore_z=False)
+    moreobjects = util.get_objects(4, 5)
+    more1 = util.get_objects(12,5)
+    more2 = util.get_objects(13,3)
+    more3 = util.get_objects(10,5)
+    #objects = objects + moreobjects + more1 + more2 + more3
+    scene14_8 = findChains(objects)
 #    print""
 #    print "scene 4, step 5"
 #    findChains(util.get_objects(4, 5))
@@ -56,10 +66,21 @@ def findChains(inputObjectSet):
 
     
     bestlines = []
-    for pair in util.find_pairs(inputObjectSet):
-        result = chainSearch(pair[0], pair[1], inputObjectSet)
-        if result != None: bestlines.append(result)
-
+    explored = set()
+    skipped = 0
+    pairwise = util.find_pairs(inputObjectSet)
+    list.sort
+    pairwise.sort(key=lambda p: util.findDistance(p[0].position, p[1].position),reverse=True)
+    for pair in pairwise:
+        start,finish = pair[0],pair[1]
+        if frozenset([start.id,finish.id]) not in explored:
+            result = chainSearch(start, finish, inputObjectSet)
+            if result != None: 
+                bestlines.append(result)
+                s = map(frozenset,util.find_pairs(result[0:len(result)-1]))
+                map(explored.add,s)
+        else: skipped += 1
+               
     verybest = []
     costSum = 0
     for line in bestlines:
