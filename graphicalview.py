@@ -6,7 +6,6 @@ import numpy as np
 class PlaygroundWindow:
     def __init__(self,master):
         
-        self.model = PlaygroundModel()
         self.dragOrigin = []
         frame = Frame(master)
         frame.pack()
@@ -69,7 +68,6 @@ class PlaygroundWindow:
         self.research()
 
     def doubleclick(self,event):
-        self.model.addBall(event.x, event.y)
         self.c.create_oval(event.x-10,event.y-10,event.x+10,event.y+10,fill="red")
 
 
@@ -109,25 +107,7 @@ class PlaygroundWindow:
             
         
         
-        
-
-class PlaygroundModel():
-    def __init__(self):
-        self.objectCount = 0
-        self.objectList = []
-        self.mode=2
-        self.distvar_limit=3
-        self.angle_limit= 0.9
-        self.min_length = 3
-        self.dist_wt = 1
-        self.distvar_wt = 0.1
-        self.anglevar_wt = 0.05
-    def addBall(self,x,y):
-        self.objectCount +=1
-        self.objectList.append(PhysicalObject(self.objectCount,[x,y],0,0))
-    def getObjects(self):
-        return self.objectList
-
+    
 root = Tk(className=" Chainfinder Playground ")
 
 PhysicalObject = namedtuple('physicalObject', ['id', 'position', 'bbmin', 'bbmax'])
