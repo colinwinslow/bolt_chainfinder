@@ -7,6 +7,7 @@ import util
 import numpy as np
 import heapq
 from collections import namedtuple
+import sceneEval
 
 
 global ignore_z
@@ -46,6 +47,10 @@ def main():
     print "scene 14, step 8"
     for line in findChains(util.get_objects(14, 8)):
         print  "prior: ", np.round(line[0],4),"\t",util.lookup_objects(line[1])
+        
+        
+
+    
 
 def findChains(inputObjectSet, 
                distance_limit=3, angle_limit=0.9, min_line_length=3,
@@ -64,27 +69,39 @@ def findChains(inputObjectSet,
     pairwise.sort(key=lambda p: util.findDistance(p[0].position, p[1].position),reverse=True)
     for pair in pairwise:
         start,finish = pair[0],pair[1]
-        if frozenset([start.id,finish.id]) not in explored:
-            result = chainSearch(start, finish, inputObjectSet,params)
-            if result != None: 
-                bestlines.append(result)
-                s = map(frozenset,util.find_pairs(result[0:len(result)-1]))
-                map(explored.add,s)
-        else: skipped += 1
+        result = chainSearch(start, finish, inputObjectSet,params)
+        if result != None: 
+            bestlines.append(result)
+            s = map(frozenset,util.find_pairs(result[0:len(result)-1]))
+            map(explored.add,s)
+#    for pair in pairwise:
+#        start,finish = pair[0],pair[1]
+#        if frozenset([start.id,finish.id]) not in explored:
+#            result = chainSearch(start, finish, inputObjectSet,params)
+#            if result != None: 
+#                bestlines.append(result)
+#                s = map(frozenset,util.find_pairs(result[0:len(result)-1]))
+#                map(explored.add,s)
+#        else: skipped += 1
                
     verybest = []
     costSum = 0
     for line in bestlines:
         if len(line)>min_line_length:
             verybest.append(line)
-            line[len(line)-1] = 1-line[len(line)-1]
-            costSum += line[len(line)-1]
-    verybest.sort(key=lambda l: l[len(l)-1],reverse=True)
-    costs = map(lambda l: l.pop()/costSum,verybest)
-    return zip(costs,verybest)
+            line[len(line)-1] = line[len(line)-1]/(len(line)-1)
+    #verybest.sort(key=lambda l: l[len(l)-1])
+    verybest.sort(key=lambda l: len(l),reverse=True)
+    costs = map(lambda l: l.pop()+2,verybest)
+#    print zip(costs,verybest)
+#    print costs
+    print "SCENE EVAL"
+    return sceneEval.bundleSearch(util.totuple(inputObjectSet), zip(costs,verybest))
+#    return zip(costs,verybest)
+    
             
 def chainSearch(start, finish, points,params):
-    node = Node(start, -1, [], 0)
+    node = Node(start, -1, [], 0,0)
     frontier = PriorityQueue()
     frontier.push(node, 0)
     explored = set()
@@ -137,14 +154,19 @@ def distCost(current,step,start,goal):
     return stepdist**2/totaldist**2
     
 class Node:
-    def __init__(self, state, parent, action, cost):
+    def __init__(self, state, parent, action, cost,qCost):
         self.state = state
         self.parent = parent
         self.action = action
         self.icost = cost
+        self.iqcost = qCost
         if parent != -1:
             self.cost = parent.cost + cost
-        else: self.cost=cost
+            self.qCost = parent.qCost + qCost
+        else:
+            self.cost=cost
+            self.qCost = qCost
+            
     def getState(self):
         return self.state
     
@@ -158,23 +180,25 @@ class Node:
                     dCost =distCost(self.state.position,p.position,start.position,finish.position)
                     if aCost <= params.angle_limit and dCost < 1: # prevents it from choosing points that overshoot the target.
                         normA = params.anglevar_weight*(aCost/params.angle_limit)
-                        normD = params.dist_weight*dCost
-                        finalcost = (normA+normD)/(params.anglevar_weight+params.dist_weight)
-                        out.append(Node(p,self,p.id, finalcost))
+                        distanceCost = dCost
+                        qualityCost = normA/params.anglevar_weight
+                        out.append(Node(p,self,p.id, distanceCost,qualityCost))
         else:
             out = []
             for p in points:
                 if self.state.id != p.id: 
-                    vCost = distVarCost(self.parent.state.position, self.state.position, p.position)       
+                    vCost = distVarCost(self.parent.state.position, self.state.position, p.position)
+#                    print self.parent.state.position,self.state.position,p.position,"--",vCost/params.distance_limit
                     if params.mode==1: aCost = angleCost(self.parent.state.position, self.state.position,self.state.position, p.position)
                     elif params.mode==2: aCost = oldAngleCost(self.parent.state.position,self.state.position,p.position)
                     dCost = distCost(self.state.position,p.position,start.position,finish.position)
-                    if aCost <= params.angle_limit and dCost <= 1:
+#                    print "dcost",dCost
+                    if aCost <= params.angle_limit and dCost <= 1 and vCost/params.distance_limit <= 1:
                         normV = params.distvar_weight*(vCost/params.distance_limit)
                         normA = params.anglevar_weight*(aCost/params.angle_limit)
-                        finalCost = (normA+normV+dCost)/(params.distvar_weight+params.anglevar_weight+params.dist_weight)
-                        out.append(Node(p,self,p.id,finalCost))
-                        
+                        qualityCost = (normA+normV)/(params.distvar_weight+params.anglevar_weight)
+                        out.append(Node(p,self,p.id,dCost,qualityCost))
+        
         return out
 
     def traceback(self):
@@ -182,11 +206,13 @@ class Node:
         node = self
         while node.parent != -1:
             solution.append(node.action)
+
             node = node.parent
         cardinality = len(solution)-1 #exclude the first node, which has cost 0
-        cost = self.cost/cardinality
+        cost = self.qCost#/cardinality
         solution.reverse()
         solution.append(cost)
+
         return solution
 
 

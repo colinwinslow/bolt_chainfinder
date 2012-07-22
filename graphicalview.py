@@ -32,7 +32,7 @@ class PlaygroundWindow:
         self.distvar_weight=StringVar()
         self.distvar_weight.set(".1")
         self.dist_weight=StringVar()
-        self.dist_weight.set("1")
+        self.dist_weight.set("depricated")
         
         pmode_button_lines = Radiobutton(varFrame,text="Lines",variable=self.pathfinding_mode,value=1).pack(anchor=W)
         pmode_button_chains = Radiobutton(varFrame,text="Chains",variable=self.pathfinding_mode,value=2).pack(anchor=W)
@@ -45,9 +45,7 @@ class PlaygroundWindow:
         
         length_limit_label = Label(varFrame, text="Min Length:", anchor=W).pack()
         self.length_limit_field = Entry(varFrame, width=5,textvariable=self.min_line_length).pack()
-        
-        distance_weight_label = Label(varFrame, text="Distance Weight:", anchor=W).pack()
-        self.distance_weight_field = Entry(varFrame, width=5,textvariable=self.dist_weight).pack()
+    
         
         distvar_weight_label = Label(varFrame, text="Distance Var Weight:", anchor=W).pack()
         self.distvar_weight_field = Entry(varFrame, width=5,textvariable=self.distvar_weight).pack()
@@ -79,6 +77,7 @@ class PlaygroundWindow:
 
     def mouseup(self,event):
         self.research()
+        print self.pathfinding_mode
         
     def leftclick(self,event):
         self.c.delete("current")
@@ -94,10 +93,9 @@ class PlaygroundWindow:
                          eval(self.min_line_length.get()),
                          eval(self.anglevar_weight.get()),
                          eval(self.distvar_weight.get()),
-                         eval(self.dist_weight.get()),
+                         1,
                          self.pathfinding_mode
                          )
-        print params
         self.c.delete("line")
         searchMe = []
         for o in self.c.find_all():
@@ -108,29 +106,48 @@ class PlaygroundWindow:
             self.chainViz(results)
             
     def chainViz(self,chains):
-        rank = 0
-        print chains
+
         self.c.delete("line")
+        color = "green"
+        weight = 4
+        print "chains",chains
         
+        
+    def chainViz(self,chains):
+        self.c.delete("line")
+        color = "green"
+        weight = 4
         for c in chains:
-
-            if rank ==0: 
-                color = "green"
-                weight = 4
-
-            elif rank == 1: 
-                color = "orange"
-                weight = 2
-            elif rank == 2: 
-                color = "red"
-                weight = 1
-            if rank < 3:
-                for o in range(len(c[1])-1):
-                    linePts = self.c.coords(c[1][o])[0:2]+self.c.coords(c[1][o+1])[0:2]
-                    linePts = map(int,linePts)
-                    linePts = map(lambda x: x+10,linePts)
-                    self.c.create_line(linePts,fill=color,tags="line",width=weight) 
-            rank += 1
+            for o in range(len(c)-1):
+                linePts = self.c.coords(c[o])[0:2]+self.c.coords(c[o+1])[0:2]
+                linePts = map(int,linePts)
+                linePts = map(lambda x: x+10,linePts)
+                self.c.create_line(linePts,fill=color,tags="line",width=weight) 
+            
+            
+#    def chainViz(self,chains):
+#        rank = 0
+#        self.c.delete("line")
+#        
+#        for c in chains:
+#
+#            if rank ==0: 
+#                color = "green"
+#                weight = 4
+#
+#            elif rank == 1: 
+#                color = "orange"
+#                weight = 2
+#            elif rank == 2: 
+#                color = "red"
+#                weight = 1
+#            if rank < 3:
+#                for o in range(len(c[1])-1):
+#                    linePts = self.c.coords(c[1][o])[0:2]+self.c.coords(c[1][o+1])[0:2]
+#                    linePts = map(int,linePts)
+#                    linePts = map(lambda x: x+10,linePts)
+#                    self.c.create_line(linePts,fill=color,tags="line",width=weight) 
+#            rank += 1
             
         
         
