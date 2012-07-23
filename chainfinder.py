@@ -76,6 +76,7 @@ def findChains(inputObjectSet,
 #            s = map(frozenset,util.find_pairs(result[0:len(result)-1]))
 #            map(explored.add,s)
     skipped = 0
+    timestart = time.time()
     for pair in pairwise:
         start,finish = pair[0],pair[1]
         if frozenset([start.id,finish.id]) not in explored:
@@ -83,8 +84,7 @@ def findChains(inputObjectSet,
             if result != None: 
                 bestlines.append(result)
                 s = map(frozenset,util.find_pairs(result[0:len(result)-1]))
-                print s
-                print result
+                
                 map(explored.add,s)
         else: skipped += 1
     print "skipped",skipped
@@ -98,13 +98,16 @@ def findChains(inputObjectSet,
     #verybest.sort(key=lambda l: l[len(l)-1])
     verybest.sort(key=lambda l: len(l),reverse=True)
     costs = map(lambda l: l.pop()+2,verybest)
+    timefinish = time.time()
+    print "chain search time:",timefinish-timestart
 #    print zip(costs,verybest)
 #    print costs
     print "SCENE EVAL"
-    start = time.time()
+    timestart = time.time()
     evali = sceneEval.bundleSearch(util.totuple(inputObjectSet), zip(costs,verybest),allow_intersection)
-    finish = time.time()
-    print "eval time" ,finish-start 
+    timefinish = time.time()
+    print "full-scene eval time:" ,timefinish-timestart
+    print""
     return evali
 #    return zip(costs,verybest)
     

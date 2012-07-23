@@ -96,6 +96,7 @@ class PlaygroundWindow:
 
         
     def leftclick(self,event):
+        self.c.delete("line")
         self.c.delete("current")
 
 
@@ -112,7 +113,6 @@ class PlaygroundWindow:
                          1,
                          self.allow_intersection.get()
                          )
-        print self.allow_intersection.get()
         self.c.delete("line")
         searchMe = []
         for o in self.c.find_all():
@@ -132,11 +132,21 @@ class PlaygroundWindow:
         print "chains",chains
         
     def saveScene(self):
+        params = tuple([eval(self.distance_limit.get()),
+                         eval(self.angle_limit.get()),
+                         eval(self.min_line_length.get()),
+                         eval(self.anglevar_weight.get()),
+                         eval(self.distvar_weight.get()),
+                         1,
+                         self.allow_intersection.get()
+                         ])
         self.c.delete("line")
         filename = tkFileDialog.asksaveasfilename()
         f=open(filename,'w')
         dots = map(self.c.coords,self.c.find_all())
-        pickledCanvas = pickle.dump(dots, f)
+        output = (params,dots)
+        print output
+        pickledCanvas = pickle.dump(output, f)
         f.close()
         
     def openScene(self):
@@ -144,8 +154,16 @@ class PlaygroundWindow:
         self.c.delete('all')
         filename = tkFileDialog.askopenfilename()
         f=open(filename,'r')
-        unpickledCanvas=pickle.load(f)
-        for o in unpickledCanvas:
+        unpickled=pickle.load(f)
+        
+        self.distance_limit.set(str(unpickled[0][0]))
+        self.angle_limit.set(str(unpickled[0][1]))
+        self.min_line_length.set(str(unpickled[0][2]))
+        self.anglevar_weight.set(str(unpickled[0][3]))
+        self.distvar_weight.set(str(unpickled[0][4]))
+        self.allow_intersection.set(unpickled[0][6])
+        
+        for o in unpickled[1]:
             self.c.create_oval(o[0],o[1],o[2],o[3],fill="red")
         f.close()
         

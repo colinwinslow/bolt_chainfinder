@@ -31,6 +31,7 @@ def bundleSearch(scene, groups, intersection = 0):
             if child.state not in explored and frontier.contains(child.state)==False:
                 frontier.push(child, child.cost)
             elif frontier.contains(child.state) and frontier.pathCost(child.state) > child.cost:
+                
                 frontier.push(child,child.cost)  
                 
 class BNode:
