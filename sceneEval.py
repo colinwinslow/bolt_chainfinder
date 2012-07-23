@@ -5,7 +5,12 @@ Created on Jul 22, 2012
 '''
 import heapq
 
-def bundleSearch(scene, groups):
+
+def bundleSearch(scene, groups, intersection = 0):
+    global allow_intersection 
+    allow_intersection = intersection
+    
+    print "number of groups:",len(groups)
     
     singletonCost = 1
     for i in scene:
@@ -17,13 +22,8 @@ def bundleSearch(scene, groups):
     explored = set()
     while frontier.isEmpty() == False:
         node = frontier.pop()
-#        print node.getState()
-#        print frozenset(scene)
-#        print "dif",node.getState().difference(frozenset(map(lambda x:x[0],scene)))
         if node.getState() >= frozenset(map(lambda x:x[0],scene)):
             path = node.traceback()
-#            path.insert(0, start)
-            print "$$$",path
             return path
         explored.add(node.state)
         successors = node.getSuccessors(scene,groups)
@@ -50,7 +50,8 @@ class BNode:
     def getSuccessors(self, points,groups):
         successors = []
         for g in groups:
-            if self.state.isdisjoint(g[1]):
+            if len(self.state.intersection(g[1]))<=allow_intersection:
+#            if self.state.isdisjoint(g[1]):
 #                print "prestate",self.state,g[1]
                 asd=BNode(self.state.union(g[1]),self,g,g[0])
 #                print "state",asd.state, "cost", asd.cost
@@ -69,8 +70,7 @@ class BNode:
         cardinality = len(solution)-1 #exclude the first node, which has cost 0
         cost = self.cost#/cardinality
         solution.reverse()
-#        solution.append(cost)
-        print cost
+        solution.append(cost)
 
         return solution
     

@@ -8,6 +8,7 @@ import numpy as np
 import heapq
 from collections import namedtuple
 import sceneEval
+import time
 
 
 global ignore_z
@@ -45,58 +46,66 @@ def main():
     print "Sample run of line detecton on Blockworld: \n"
     np.seterr(all='raise')
     print "scene 14, step 8"
-    for line in findChains(util.get_objects(14, 8)):
-        print  "prior: ", np.round(line[0],4),"\t",util.lookup_objects(line[1])
+    result = findChains(util.get_objects(14, 8))
+    print result
+    print  "cost: ", np.round(result[-1],4),"\t",map(util.lookup_objects,result[:-1])
         
         
 
     
 
 def findChains(inputObjectSet, 
-               distance_limit=3, angle_limit=0.9, min_line_length=3,
+               distance_limit=2, angle_limit=0.9, min_line_length=3,
                anglevar_weight= .05, distvar_weight=.1,dist_weight=1,
-               mode=1):
+               allow_intersection=0):
     '''finds all the chains, then returns the ones that satisfy constraints, sorted from best to worst.'''
     
     params = CParams(distance_limit, angle_limit, min_line_length,
                anglevar_weight, distvar_weight,dist_weight,
-               mode)
+               allow_intersection)
     bestlines = []
     explored = set()
     skipped = 0
     pairwise = util.find_pairs(inputObjectSet)
-    list.sort
-    pairwise.sort(key=lambda p: util.findDistance(p[0].position, p[1].position),reverse=True)
-    for pair in pairwise:
-        start,finish = pair[0],pair[1]
-        result = chainSearch(start, finish, inputObjectSet,params)
-        if result != None: 
-            bestlines.append(result)
-            s = map(frozenset,util.find_pairs(result[0:len(result)-1]))
-            map(explored.add,s)
+    pairwise.sort(key=lambda p: util.findDistance(p[0].position, p[1].position),reverse=False)
 #    for pair in pairwise:
 #        start,finish = pair[0],pair[1]
-#        if frozenset([start.id,finish.id]) not in explored:
-#            result = chainSearch(start, finish, inputObjectSet,params)
-#            if result != None: 
-#                bestlines.append(result)
-#                s = map(frozenset,util.find_pairs(result[0:len(result)-1]))
-#                map(explored.add,s)
-#        else: skipped += 1
+#        result = chainSearch(start, finish, inputObjectSet,params)
+#        if result != None: 
+#            bestlines.append(result)
+#            s = map(frozenset,util.find_pairs(result[0:len(result)-1]))
+#            map(explored.add,s)
+    skipped = 0
+    for pair in pairwise:
+        start,finish = pair[0],pair[1]
+        if frozenset([start.id,finish.id]) not in explored:
+            result = chainSearch(start, finish, inputObjectSet,params)
+            if result != None: 
+                bestlines.append(result)
+                s = map(frozenset,util.find_pairs(result[0:len(result)-1]))
+                print s
+                print result
+                map(explored.add,s)
+        else: skipped += 1
+    print "skipped",skipped
                
     verybest = []
     costSum = 0
     for line in bestlines:
         if len(line)>min_line_length:
             verybest.append(line)
-            line[len(line)-1] = line[len(line)-1]/(len(line)-1)
+#            line[len(line)-1] = line[len(line)-1]/(len(line)-1)
     #verybest.sort(key=lambda l: l[len(l)-1])
     verybest.sort(key=lambda l: len(l),reverse=True)
     costs = map(lambda l: l.pop()+2,verybest)
 #    print zip(costs,verybest)
 #    print costs
     print "SCENE EVAL"
-    return sceneEval.bundleSearch(util.totuple(inputObjectSet), zip(costs,verybest))
+    start = time.time()
+    evali = sceneEval.bundleSearch(util.totuple(inputObjectSet), zip(costs,verybest),allow_intersection)
+    finish = time.time()
+    print "eval time" ,finish-start 
+    return evali
 #    return zip(costs,verybest)
     
             
@@ -189,8 +198,8 @@ class Node:
                 if self.state.id != p.id: 
                     vCost = distVarCost(self.parent.state.position, self.state.position, p.position)
 #                    print self.parent.state.position,self.state.position,p.position,"--",vCost/params.distance_limit
-                    if params.mode==1: aCost = angleCost(self.parent.state.position, self.state.position,self.state.position, p.position)
-                    elif params.mode==2: aCost = oldAngleCost(self.parent.state.position,self.state.position,p.position)
+                    
+                    aCost = oldAngleCost(self.parent.state.position,self.state.position,p.position)
                     dCost = distCost(self.state.position,p.position,start.position,finish.position)
 #                    print "dcost",dCost
                     if aCost <= params.angle_limit and dCost <= 1 and vCost/params.distance_limit <= 1:
