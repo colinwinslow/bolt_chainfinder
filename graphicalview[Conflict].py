@@ -110,7 +110,7 @@ class PlaygroundWindow:
                          eval(self.anglevar_weight.get()),
                          eval(self.distvar_weight.get()),
                          1,
-                         self.allow_intersection.get(),10
+                         self.allow_intersection.get()
                          
                          )
         self.c.delete("line")
